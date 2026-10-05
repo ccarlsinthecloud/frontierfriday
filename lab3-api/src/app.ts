@@ -3,15 +3,17 @@ import { AppError, errorHandler, notFoundHandler } from "./errors.js";
 import { requestLogger } from "./requestLogger.js";
 import { createTask, deleteTask, findTask, listTasks, updateTask } from "./taskStore.js";
 import type { TaskInput } from "./types.js";
+import type { UserRepository } from "./userRepository.js";
 import { validateTask } from "./validation.js";
 
 /**
  * Creates the configured Express application.
  *
+ * @param userRepository - Optional user data access used to register user routes.
  * @returns An Express application with health and task routes.
  * @example const app = createApp();
  */
-export function createApp(): express.Express {
+export function createApp(userRepository?: Pick<UserRepository, "findAll">): express.Express {
   const app = express();
   app.use(requestLogger);
   app.use(express.json());
@@ -23,6 +25,12 @@ export function createApp(): express.Express {
   app.get("/tasks", (_request, response) => {
     response.json(listTasks());
   });
+
+  if (userRepository !== undefined) {
+    app.get("/users", (_request, response) => {
+      response.json(userRepository.findAll());
+    });
+  }
 
   app.get("/tasks/:id", (request: Request<{ id: string }>, response) => {
     const task = findTask(request.params.id);
